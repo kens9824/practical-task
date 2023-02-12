@@ -40,7 +40,7 @@ try {
   app.get("/health", (_, res) => {
     res.status(200).json({
       success: true,
-      message: "API IS WORKING on 10/02/2023",
+      message: "API IS WORKING on 12/02/2023",
     });
   });
 

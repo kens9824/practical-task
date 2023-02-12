@@ -33,6 +33,10 @@ export const createUser = async (req: Request, res: Response) => {
       return RequestFailed(res, 400, result.error.details[0].message);
     }
     else {
+
+   
+
+
       const fullName: string = req.body.fullName || "";
       const username: string = req.body.userName;
       const password: string = req.body.password;
@@ -41,18 +45,19 @@ export const createUser = async (req: Request, res: Response) => {
         ? new Date(req.body.timestamp)
         : new Date();
 
-      // if (!username || !username.trim().length) {
-      //   return RequestFailed(res, 400, "username");
-      // }
-      // if (!password || !password.trim().length) {
-      //   return RequestFailed(res, 400, "password");
-      // }
-      // if (!fullName || !fullName.trim().length) {
-      //   return RequestFailed(res, 400, "fullName");
-      // }
-      // if (!phoneNumber || !phoneNumber.trim().length) {
-      //   return RequestFailed(res, 400, "phonenumber");
-      // }
+
+        const oldUser = await getConnection()
+        .getRepository(User)
+        .createQueryBuilder("user")
+        .where("user.userName = :username", { username })
+        .orWhere("user.phoneNumber = :phoneNumber", { phoneNumber: phoneNumber })
+        .getOne();
+
+
+        if(oldUser){
+          return RequestFailed(res, 409, "user already register with same username or phone number");
+
+        }
 
       const hashPassword = await hash(password, 12);
 
