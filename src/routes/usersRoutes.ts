@@ -14,7 +14,7 @@ router.get("/logout", Auth, logout);
 
 router.post("/signup",  createUser);
 router.post("/login", Login);
-router.get("/:id", Auth, getProfileDetails);
+router.get("/me", Auth, getProfileDetails);
 
 
 export = router;

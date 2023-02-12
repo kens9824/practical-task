@@ -4,10 +4,12 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "dev": "nodemon dist/index.js",
+        "dev": "npx env-cmd -f .env.development nodemon dist/index.js",
         "postinstall": "npm run build",
         "build": "tsc",
-        "start": "node --max-old-space-size=8192 dist/index.js",
+        "start": "npx env-cmd env-cmd -f .env node --max-old-space-size=8192 dist/index.js",
+        "start:qa": "npx env-cmd env-cmd -f .env.qa node --max-old-space-size=8192 dist/index.js",
+
         "watch": "tsc -w",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -22,6 +24,8 @@
         "compression": "^1.7.4",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
+        "helmet": "^6.0.1",
+        "joi": "^17.7.1",
         "jsonwebtoken": "^8.5.1",
         "multer": "^1.4.4",
         "mysql": "^2.18.1",
@@ -38,6 +42,7 @@
         "@types/csvtojson": "^2.0.0",
         "@types/dotenv": "^8.2.0",
         "@types/express": "^4.17.11",
+        "@types/joi": "^17.2.3",
         "@types/jsonwebtoken": "^8.5.6",
         "@types/multer": "^1.4.7",
         "@types/mysql": "^2.15.17",

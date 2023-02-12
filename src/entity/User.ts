@@ -24,6 +24,9 @@ export class User extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: true })
+  isLogin: boolean;
+
   @Column({ unique: true })
   phoneNumber: string;
 

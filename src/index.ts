@@ -8,6 +8,7 @@ import "reflect-metadata";
 import { createConnection } from "typeorm";
 import { pagination } from "typeorm-pagination";
 import Routes from "./routes/Routes";
+const helmet = require("helmet");
 
 
 try {
@@ -20,6 +21,7 @@ try {
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+  app.use(helmet());
   app.use(
     compression({
       threshold: 0,

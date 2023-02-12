@@ -5,7 +5,7 @@
     "username": "root",
     "password": "",
     "database": "practical",
-    "synchronize": true,
+    "synchronize": false,
     "logging": true,
     "entities": ["dist/entity/**/*.js"],
     "cli": {

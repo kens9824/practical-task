@@ -3,6 +3,8 @@ import { classToPlain } from "class-transformer";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { getConnection } from "typeorm";
+import * as Joi from "joi";
+
 import { User } from "../entity/User";
 import { AuthRequest } from "../middlewares/AuthRequestContext";
 import { InternalServerError } from "../response/InternalServerErrorResponse";
@@ -11,29 +13,48 @@ import { RequestFailed } from "../response/RequestFailedResponse";
 
 
 export const createUser = async (req: Request, res: Response) => {
-  try {        
-    const fullName: string = req.body.fullName || "";
-    const username: string = req.body.userName;
-    const password: string = req.body.password;
-    const phoneNumber: string = req.body.phoneNumber;
-    const timestamp = req.body.timestamp
-      ? new Date(req.body.timestamp)
-      : new Date();
+  try {
 
-    if (!username || !username.trim().length) {
-      return RequestFailed(res, 400, "username");
-    }
-    if (!password || !password.trim().length) {
-      return RequestFailed(res, 400, "password");
-    }
-    if (!fullName || !fullName.trim().length) {
-      return RequestFailed(res, 400, "fullName");
-    }
-    if (!phoneNumber || !phoneNumber.trim().length) {
-      return RequestFailed(res, 400, "phonenumber");
-    }
+    const validateObject = (input: object) => {
+      const schema = Joi.object().keys({
+        fullName: Joi.string().alphanum().min(3).max(30).required(),
+        userName: Joi.string().alphanum().min(3).max(30).required(),
+        password: Joi.string().min(3).max(15).required().label('Password'),
+        phoneNumber: Joi.string().length(10).pattern(/^[0-9]+$/).required(),
+      });
+      return schema.validate(input);
+    };
 
-    const hashPassword = await hash(password, 12);
+    const result = validateObject(req.body)
+    console.log(result, "----");
+
+
+    if (result?.error?.details) {
+      return RequestFailed(res, 400, result.error.details[0].message);
+    }
+    else {
+      const fullName: string = req.body.fullName || "";
+      const username: string = req.body.userName;
+      const password: string = req.body.password;
+      const phoneNumber: string = req.body.phoneNumber;
+      const timestamp = req.body.timestamp
+        ? new Date(req.body.timestamp)
+        : new Date();
+
+      // if (!username || !username.trim().length) {
+      //   return RequestFailed(res, 400, "username");
+      // }
+      // if (!password || !password.trim().length) {
+      //   return RequestFailed(res, 400, "password");
+      // }
+      // if (!fullName || !fullName.trim().length) {
+      //   return RequestFailed(res, 400, "fullName");
+      // }
+      // if (!phoneNumber || !phoneNumber.trim().length) {
+      //   return RequestFailed(res, 400, "phonenumber");
+      // }
+
+      const hashPassword = await hash(password, 12);
 
       const user = new User();
       user.userName = username;
@@ -41,6 +62,7 @@ export const createUser = async (req: Request, res: Response) => {
       user.fullName = fullName;
       user.phoneNumber = phoneNumber;
       user.timestamp = timestamp;
+      user.isLogin = true
       await user.save();
 
       const userResponse = classToPlain(user);
@@ -59,18 +81,19 @@ export const createUser = async (req: Request, res: Response) => {
         data,
         process.env.REFRESH_TOKEN_SECRET!,
         {
-          expiresIn: process.env.JWT_EXPIRE_TIME,
+          expiresIn: process.env.JWT_REFRESH_EXPIRE_TIME,
         }
       );
       if (token) {
         res.status(200).json({
           success: true,
-          token:token,
-          refreshToken:refreshToken,
+          token: token,
+          refreshToken: refreshToken,
           user: userResponse,
         });
       }
-    
+    }
+
   } catch (error) {
     return InternalServerError(res, error);
   }
@@ -110,26 +133,29 @@ export const Login = async (req: Request, res: Response) => {
       if (!user.isActive) {
         return RequestFailed(res, 401, "User is inactive");
       }
-  
+
       const data = {
         id: user.id,
         username: user.userName,
 
       };
       const token = await jwt.sign(data, process.env.TOKEN_SECRET!, {
-        expiresIn: "7d",
+        expiresIn:  process.env.JWT_EXPIRE_TIME,
       });
 
       const refreshToken = await jwt.sign(
         data,
         process.env.REFRESH_TOKEN_SECRET!,
         {
-          expiresIn: "30d",
+          expiresIn: process.env.JWT_REFRESH_EXPIRE_TIME,
         }
       );
       if (token) {
+        if (!user.isLogin) {
+          user.isLogin = true;
+          await user.save()
+        }
         res.status(202).json(LoginResponse(token, refreshToken, user));
-
       }
     }
   } catch (error) {
@@ -138,7 +164,7 @@ export const Login = async (req: Request, res: Response) => {
 };
 
 export const getProfileDetails = async (req: AuthRequest, res: Response) => {
-  try {    
+  try {
     const user = await User.findOne(req.userId);
 
     if (!user) {
@@ -157,18 +183,18 @@ export const getProfileDetails = async (req: AuthRequest, res: Response) => {
 
 export const logout = async (req: AuthRequest, res: Response) => {
   try {
-    const id = req.params.id
-    
-    const user = await User.findOne(id, { relations: ["role"] });
+
+    const user = await User.findOne(req.userId);
 
     if (!user) {
       return RequestFailed(res, 404, "user", req.userId);
     }
 
-    const plainUser = classToPlain(user);
+    user.isLogin = false
+    await user.save()
     res.status(200).json({
       success: true,
-      user: plainUser,
+      message: "User Logout Succussfully"
     });
   } catch (error) {
     return InternalServerError(res, error);
