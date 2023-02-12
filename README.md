@@ -7,7 +7,7 @@ Steps to run this project:
 3. Run `npm run watch` command and run any one step according to environment
 4. Run `npm run dev` command for local development Environment 
 4. Run `npm run start:qa` command for QA Environment 
-4. Run `npm run start` command for production Environment 
+4. Run `npm run start` command for production Environment  you need to create .env file in root folder for production Environment
 
 
 ## code snippet of configuration of database  
