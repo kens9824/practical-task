@@ -3,7 +3,8 @@ import {
   createUser,
   Login,
   getProfileDetails,
-  logout
+  logout,
+  getAccessToken
 } from "../controllers/usersController";
 import { Auth } from "./../middlewares/Auth";
 
@@ -14,6 +15,8 @@ router.get("/logout", Auth, logout);
 
 router.post("/signup",  createUser);
 router.post("/login", Login);
+router.post("/newtoken", getAccessToken);
+
 router.get("/me", Auth, getProfileDetails);
 
 

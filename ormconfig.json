@@ -4,7 +4,7 @@
     "port": 3306,
     "username": "root",
     "password": "",
-    "database": "practical",
+    "database": "task",
     "synchronize": true,
     "logging": true,
     "entities": ["dist/entity/**/*.js"],

@@ -11,6 +11,12 @@ import { InternalServerError } from "../response/InternalServerErrorResponse";
 import { LoginResponse } from "../response/LoginResponse";
 import { RequestFailed } from "../response/RequestFailedResponse";
 
+interface JWT_DECODE {
+  id: number;
+  username: string;
+  iat: number;
+  exp: number;
+}
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -34,7 +40,7 @@ export const createUser = async (req: Request, res: Response) => {
     }
     else {
 
-   
+
 
 
       const fullName: string = req.body.fullName || "";
@@ -46,7 +52,7 @@ export const createUser = async (req: Request, res: Response) => {
         : new Date();
 
 
-        const oldUser = await getConnection()
+      const oldUser = await getConnection()
         .getRepository(User)
         .createQueryBuilder("user")
         .where("user.userName = :username", { username })
@@ -54,10 +60,10 @@ export const createUser = async (req: Request, res: Response) => {
         .getOne();
 
 
-        if(oldUser){
-          return RequestFailed(res, 409, "user already register with same username or phone number");
+      if (oldUser) {
+        return RequestFailed(res, 409, "user already register with same username or phone number");
 
-        }
+      }
 
       const hashPassword = await hash(password, 12);
 
@@ -145,7 +151,7 @@ export const Login = async (req: Request, res: Response) => {
 
       };
       const token = await jwt.sign(data, process.env.TOKEN_SECRET!, {
-        expiresIn:  process.env.JWT_EXPIRE_TIME,
+        expiresIn: process.env.JWT_EXPIRE_TIME,
       });
 
       const refreshToken = await jwt.sign(
@@ -205,3 +211,57 @@ export const logout = async (req: AuthRequest, res: Response) => {
     return InternalServerError(res, error);
   }
 };
+
+
+export const getAccessToken = async (req: Request, res: Response) => {
+  try {
+
+    const refreshToken = req.body.refresh_token
+
+    if (!refreshToken) {
+      return RequestFailed(res, 404, "refresh Token");
+    }
+
+    const verifyToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as JWT_DECODE;
+
+    console.log(verifyToken);
+
+    if (verifyToken) {
+      const data = {
+        id: verifyToken.id,
+        username: verifyToken.username,
+
+      };
+
+      const user = await User.findOne(verifyToken.id)
+
+      user.isLogin = true
+      await user.save()
+      const token = await jwt.sign(data, process.env.TOKEN_SECRET!, {
+        expiresIn: process.env.JWT_EXPIRE_TIME,
+      });
+
+      if (token) {
+        res.status(200).json({
+          success: true,
+          data: {
+            token: token
+          }
+        });
+      }
+
+    }
+
+
+
+
+
+
+
+
+
+  } catch (error) {
+    return InternalServerError(res, error);
+  }
+};
+
